@@ -1,6 +1,9 @@
 # vibekey-mac
 
 A native macOS replacement for Ulanzi Studio for the **Ulanzi AU05 "Vibe Key"**. It's a menu bar app with a visual editor, plus a CLI.
+
+![Vibe Key editor: the AU05 with its knob highlighted, action pills for each control, the action list on the right and the knob's Scroll action in the editor below](docs/screenshot.png)
+
 Everything stays local: no network calls, no telemetry, no accounts, and no talking to Ulanzi's servers. Nothing is flashed or saved to the device. The only thing Vibe Key sends it is the same "host online" heartbeat Ulanzi Studio sends (see [How it talks to the AU05](#how-it-talks-to-the-au05)).
 
 ## Build
