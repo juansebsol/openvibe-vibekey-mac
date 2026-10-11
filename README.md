@@ -65,7 +65,7 @@ With an ad-hoc signature, every rebuild counts as a "new" app to macOS. If a per
 - **Slots per control:** Press (`tap`), Long Press (`longPress`), Hold (`hold`). The knob also has Turn Left / Turn Right (`left` / `right`).
   - If a control has a **Hold** action, a hotkey stays held down while you hold the button (push-to-talk), and Voice Record records while held.
   - With a **Long Press** action set, Press fires on release. Without one, it fires the moment you press.
-- **Action types:** `hotkey` (`"keys": "ctrl+shift+d"`), `text`, `open` (app name or path), `website`, `shell`, `media` (`volumeUp`, `volumeDown`, `mute`, `playPause`, `next`, `previous`, `brightnessUp`, `brightnessDown`), `scroll` (`amount`, positive = up), `multi` (`actions` + `delay`), `random`, `switchProfile`, `voice`.
+- **Action types:** `hotkey` (`"keys": "ctrl+shift+d"`), `text`, `open` (app name or path), `website`, `shell`, `media` (`volumeUp`, `volumeDown`, `mute`, `playPause`, `next`, `previous`, `brightnessUp`, `brightnessDown`), `scroll` (`amount`, positive = up), `multi` (`actions` + `delay`), `random`, `switchProfile` (`"profile": "Coding"` for a specific one, or `"cycle": "next"` / `"previous"` to step through profiles in order, wrapping around), `voice`.
 
 ```json
 "mic": { "title": "Dictate", "hold": { "type": "voice" } },

@@ -51,6 +51,7 @@ struct SettingsView: View {
         Section {
             Toggle("Launch Vibe Key at login", isOn: Binding(get: { state.launchAtLogin }, set: { state.setLaunchAtLogin($0) }))
             Toggle("Open the editor when Vibe Key launches", isOn: $state.config.openEditorAtLaunch)
+            Toggle("Show a notification when the profile changes", isOn: $state.config.showProfileHUD)
         }
         Section {
             LabeledContent("Long-press time") {

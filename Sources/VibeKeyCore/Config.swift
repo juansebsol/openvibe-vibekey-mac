@@ -59,6 +59,11 @@ public enum MediaKey: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// Direction for a switchProfile action that steps through profiles in order (wrapping around).
+public enum ProfileCycle: String, Codable, CaseIterable, Sendable {
+    case next, previous
+}
+
 /// One action. Only the fields relevant to `type` are used/written.
 public struct Action: Codable, Hashable, Sendable {
     public var type: ActionType
@@ -71,14 +76,15 @@ public struct Action: Codable, Hashable, Sendable {
     public var amount: Int?         // scroll lines (+ up, - down)
     public var actions: [Action]?   // multi / random
     public var delay: Double?       // multi: seconds between steps
-    public var profile: String?     // switchProfile
+    public var profile: String?     // switchProfile: a specific profile…
+    public var cycle: ProfileCycle? // …or step to the next/previous one in order
 
     public init(type: ActionType, keys: String? = nil, text: String? = nil, app: String? = nil,
                 url: String? = nil, command: String? = nil, media: MediaKey? = nil, amount: Int? = nil,
-                actions: [Action]? = nil, delay: Double? = nil, profile: String? = nil) {
+                actions: [Action]? = nil, delay: Double? = nil, profile: String? = nil, cycle: ProfileCycle? = nil) {
         self.type = type; self.keys = keys; self.text = text; self.app = app; self.url = url
         self.command = command; self.media = media; self.amount = amount; self.actions = actions
-        self.delay = delay; self.profile = profile
+        self.delay = delay; self.profile = profile; self.cycle = cycle
     }
 
     public static func blank(_ type: ActionType) -> Action {
@@ -108,7 +114,12 @@ public struct Action: Codable, Hashable, Sendable {
         case .scroll: return "Scroll \(amount ?? 0)"
         case .multi: return "\(actions?.count ?? 0) actions"
         case .random: return "Random of \(actions?.count ?? 0)"
-        case .switchProfile: return "→ \(profile ?? "")"
+        case .switchProfile:
+            switch cycle {
+            case .next: return "Next profile"
+            case .previous: return "Previous profile"
+            case nil: return "→ \(profile ?? "")"
+            }
         case .voice: return "Record voice"
         }
     }
@@ -227,6 +238,8 @@ public struct AppConfig: Codable, Hashable, Sendable {
     public var longPressSeconds: Double = 0.5
     /// Show the editor window when the app launches (it always opens on re-launch / reopen).
     public var openEditorAtLaunch: Bool = true
+    /// Show a small notification at the top right of the screen when the profile changes.
+    public var showProfileHUD: Bool = true
     public var voice = VoiceSettings()
     public var profiles: [Profile] = [AppConfig.defaultProfile]
 
@@ -239,6 +252,7 @@ public struct AppConfig: Codable, Hashable, Sendable {
         activeProfile = try c.decodeIfPresent(String.self, forKey: .activeProfile) ?? d.activeProfile
         longPressSeconds = try c.decodeIfPresent(Double.self, forKey: .longPressSeconds) ?? d.longPressSeconds
         openEditorAtLaunch = try c.decodeIfPresent(Bool.self, forKey: .openEditorAtLaunch) ?? d.openEditorAtLaunch
+        showProfileHUD = try c.decodeIfPresent(Bool.self, forKey: .showProfileHUD) ?? d.showProfileHUD
         voice = try c.decodeIfPresent(VoiceSettings.self, forKey: .voice) ?? d.voice
         profiles = try c.decodeIfPresent([Profile].self, forKey: .profiles) ?? d.profiles
         if profiles.isEmpty { profiles = d.profiles }

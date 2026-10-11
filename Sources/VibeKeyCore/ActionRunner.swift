@@ -5,6 +5,8 @@ public enum Phase: Sendable { case fire, down, up }
 public final class ActionRunner {
     public let voice: VoiceRecorder
     public var switchProfile: ((String) -> Void)?
+    /// Step through profiles in order: +1 next, -1 previous (wrapping around).
+    public var cycleProfile: ((Int) -> Void)?
     public var log: ((String) -> Void)?
 
     public init(voice: VoiceRecorder) { self.voice = voice }
@@ -56,7 +58,11 @@ public final class ActionRunner {
         case .random:
             if let sub = a.actions?.randomElement() { perform(sub, phase: .fire) }
         case .switchProfile:
-            if let p = a.profile, !p.isEmpty { switchProfile?(p) }
+            if let cycle = a.cycle {
+                cycleProfile?(cycle == .next ? 1 : -1)
+            } else if let p = a.profile, !p.isEmpty {
+                switchProfile?(p)
+            }
         case .hotkey, .voice:
             perform(a, phase: .fire)
         }

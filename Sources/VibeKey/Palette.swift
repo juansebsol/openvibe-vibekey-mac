@@ -11,12 +11,20 @@ struct PaletteItem: Identifiable {
     /// For knob-turn presets: the actions for each direction.
     var knobTurn: (left: Action, right: Action)? = nil
     var type: ActionType? = nil
+    /// Distinguishes items that share an action type (Switch Profile vs Next Profile).
+    var matches: ((Action) -> Bool)? = nil
 
     static let buttonItems: [PaletteItem] = {
         let order: [ActionType] = [.open, .website, .text, .hotkey, .media, .shell, .multi, .random, .switchProfile, .voice]
-        return order.map { t in
-            PaletteItem(id: t.rawValue, label: t.label, symbol: t.symbol, section: t.section, make: { .blank(t) }, type: t)
+        var items = order.map { t in
+            PaletteItem(id: t.rawValue, label: t.label, symbol: t.symbol, section: t.section, make: { .blank(t) }, type: t,
+                        matches: t == .switchProfile ? { $0.cycle == nil } : nil)
         }
+        let cycle = PaletteItem(id: "cycleProfile", label: "Next Profile", symbol: "arrow.triangle.2.circlepath",
+                                section: "Profiles", make: { Action(type: .switchProfile, cycle: .next) },
+                                type: .switchProfile, matches: { $0.cycle != nil })
+        items.insert(cycle, at: items.firstIndex { $0.id == ActionType.switchProfile.rawValue }! + 1)
+        return items
     }()
 
     static let knobItems: [PaletteItem] = [
@@ -25,6 +33,8 @@ struct PaletteItem: Identifiable {
         turn("tracks", "Previous / Next Track", "forward", .init(type: .media, media: .previous), .init(type: .media, media: .next)),
         turn("brightness", "Brightness", "sun.max", .init(type: .media, media: .brightnessDown), .init(type: .media, media: .brightnessUp)),
         turn("arrows", "Arrow Keys", "arrow.left.arrow.right", .init(type: .hotkey, keys: "left"), .init(type: .hotkey, keys: "right")),
+        turn("profiles", "Switch Profiles", "arrow.triangle.2.circlepath",
+             .init(type: .switchProfile, cycle: .previous), .init(type: .switchProfile, cycle: .next)),
     ]
 
     private static func turn(_ id: String, _ label: String, _ symbol: String, _ l: Action, _ r: Action) -> PaletteItem {
@@ -97,7 +107,12 @@ enum Summary {
         case .scroll: return (a.amount ?? 0) >= 0 ? "Scroll up" : "Scroll down"
         case .multi: return "\(a.actions?.count ?? 0) steps"
         case .random: return "Random"
-        case .switchProfile: return "→ \(a.profile ?? "")"
+        case .switchProfile:
+            switch a.cycle {
+            case .next: return "Next profile"
+            case .previous: return "Prev. profile"
+            case nil: return "→ \(a.profile ?? "")"
+            }
         case .voice: return "Record"
         }
     }
@@ -123,6 +138,7 @@ enum Summary {
            let preset = PaletteItem.knobItems.first(where: { $0.knobTurn?.left == cfg.left && $0.knobTurn?.right == cfg.right }) {
             return preset.symbol
         }
-        return (cfg.hold ?? cfg.tap ?? cfg.longPress ?? cfg.right ?? cfg.left)?.type.symbol ?? "plus"
+        guard let action = cfg.hold ?? cfg.tap ?? cfg.longPress ?? cfg.right ?? cfg.left else { return "plus" }
+        return action.cycle != nil ? "arrow.triangle.2.circlepath" : action.type.symbol
     }
 }

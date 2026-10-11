@@ -29,7 +29,13 @@ final class AppState: ObservableObject {
     let persist: Bool
 
     @Published var config: AppConfig {
-        didSet { if persist && !applyingExternal && config != oldValue { engine.update(config) } }
+        didSet {
+            if persist && !applyingExternal && config != oldValue { engine.update(config) }
+            // Device, menu bar or editor: whatever changed the profile, say so.
+            if config.activeProfile != oldValue.activeProfile && config.showProfileHUD {
+                ProfileHUD.shared.show(name: config.activeProfile, index: config.activeIndex, count: config.profiles.count)
+            }
+        }
     }
     @Published var connected = false
     @Published var paused = false { didSet { engine.paused = paused } }

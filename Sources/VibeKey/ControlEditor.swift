@@ -236,9 +236,19 @@ struct ActionFields: View {
             }
         case .switchProfile:
             GridRow {
-                label("Profile")
-                ChoiceMenu(selection: str(\.profile), options: [""] + state.config.profiles.map(\.name),
-                           title: { $0.isEmpty ? "Choose a profile…" : $0 }, width: nested ? 200 : 240)
+                label("Switch to")
+                ChoiceMenu(selection: Binding(get: { ProfileChoice(action) }, set: { $0.apply(to: &action) }),
+                           options: [.next, .previous] + state.config.profiles.map { .named($0.name) },
+                           title: { $0.title }, icon: { $0.symbol }, width: nested ? 220 : 260)
+            }
+            if action.cycle != nil && !nested {
+                GridRow {
+                    label("")
+                    Text(cycleDescription)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Theme.tertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         case .voice:
             GridRow {
@@ -274,6 +284,16 @@ struct ActionFields: View {
         }
     }
 
+    private var cycleDescription: String {
+        let names = state.config.profiles.map(\.name)
+        guard names.count > 1 else { return "Add another profile (profile menu › New Profile) to have something to switch to." }
+        // Start from the active profile so the sentence reads like what will happen.
+        let start = state.config.activeIndex
+        let rotated = Array(names[start...] + names[..<start])
+        let ordered = action.cycle == .previous ? [rotated[0]] + rotated.dropFirst().reversed() : rotated
+        return "Each press moves on, in order: " + (ordered + [ordered[0]]).joined(separator: " → ")
+    }
+
     @ViewBuilder
     private func label(_ text: String) -> some View {
         if !nested { FieldLabel(text) }
@@ -288,6 +308,43 @@ struct ActionFields: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowedContentTypes = [.application]
         if panel.runModal() == .OK, let url = panel.url { action.app = url.path }
+    }
+}
+
+/// The Switch Profile target: a specific profile, or the next/previous one in order.
+enum ProfileChoice: Hashable {
+    case next, previous, named(String)
+
+    init(_ a: Action) {
+        switch a.cycle {
+        case .next: self = .next
+        case .previous: self = .previous
+        case nil: self = .named(a.profile ?? "")
+        }
+    }
+
+    func apply(to a: inout Action) {
+        switch self {
+        case .next: a.cycle = .next; a.profile = nil
+        case .previous: a.cycle = .previous; a.profile = nil
+        case .named(let n): a.cycle = nil; a.profile = n
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .next: return "Next profile (in order)"
+        case .previous: return "Previous profile (in order)"
+        case .named(let n): return n.isEmpty ? "Choose a profile…" : n
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .next: return "arrow.right.circle"
+        case .previous: return "arrow.left.circle"
+        case .named: return "person.crop.rectangle"
+        }
     }
 }
 

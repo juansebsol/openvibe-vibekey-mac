@@ -31,6 +31,7 @@ public final class VibeEngine {
         link = HostLink(watcher: vendor)
         runner = ActionRunner(voice: recorder)
         runner.switchProfile = { [weak self] name in self?.setActiveProfile(name) }
+        runner.cycleProfile = { [weak self] step in self?.cycleProfile(step) }
         runner.log = { [weak self] in self?.onLog?($0) }
         recorder.log = { [weak self] in self?.onLog?($0) }
         link.onError = { [weak self] in self?.onLog?($0) }
@@ -77,6 +78,15 @@ public final class VibeEngine {
         cfg.activeProfile = name
         update(cfg)
         onConfigChange?(cfg)
+    }
+
+    /// Moves to the next (+1) or previous (-1) profile in list order, wrapping around.
+    public func cycleProfile(_ step: Int) {
+        let cfg = store.config
+        let n = cfg.profiles.count
+        guard n > 1 else { onLog?("Only one profile — nothing to switch to."); return }
+        let i = ((cfg.activeIndex + step) % n + n) % n
+        setActiveProfile(cfg.profiles[i].name)
     }
 
     // MARK: Calibration

@@ -123,7 +123,8 @@ struct Sidebar: View {
         if state.selected.isKnob && turnSlot && PaletteItem.knobItems.contains(where: { $0.knobTurn.map { cfg.left == $0.left && cfg.right == $0.right } ?? false }) {
             return false
         }
-        return item.type != nil && cfg[state.slot]?.type == item.type
+        guard let type = item.type, let action = cfg[state.slot], action.type == type else { return false }
+        return item.matches?(action) ?? true
     }
 }
 

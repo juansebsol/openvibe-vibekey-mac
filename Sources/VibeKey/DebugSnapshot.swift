@@ -37,6 +37,17 @@ enum DebugSnapshot {
             ], delay: 0.1)
         },
         Step(name: "07-text") { s in s.profile[.check].tap = Action(type: .text, text: "Thanks, looks great!") },
+        Step(name: "07b-cycle-profile") { s in
+            if s.config.profiles.count < 3 {
+                for name in ["Coding", "Music"] where !s.config.profiles.contains(where: { $0.name == name }) {
+                    s.config.profiles.append(Profile(name: name, controls: s.profile.controls))
+                }
+            }
+            s.profile[.check].tap = Action(type: .switchProfile, cycle: .next)
+        },
+        Step(name: "07c-profile-hud") { s in
+            s.config.activeProfile = s.config.profiles[min(1, s.config.profiles.count - 1)].name
+        },
         Step(name: "08-settings-general") { s in s.settingsTab = .general; s.showSettings = true },
         Step(name: "09-settings-voice") { s in s.settingsTab = .voice },
         Step(name: "10-settings-device") { s in s.settingsTab = .device },
@@ -67,9 +78,9 @@ enum DebugSnapshot {
     }
 
     private static func capture(_ name: String, _ dir: URL) {
-        let windows = NSApp.windows.filter { $0.isVisible && $0.frame.width > 300 }
+        let windows = NSApp.windows.filter { $0.isVisible && $0.frame.width > 200 }
         for (n, window) in windows.enumerated() {
-            let suffix = n == 0 ? "" : "-sheet"
+            let suffix = window is NSPanel && window.styleMask.contains(.nonactivatingPanel) ? "-hud" : n == 0 ? "" : "-sheet"
             if let img = windowImage(CGWindowID(window.windowNumber)) {
                 write(NSBitmapImageRep(cgImage: img), dir.appendingPathComponent("\(name)\(suffix).png"))
             } else if let view = window.contentView?.superview,
